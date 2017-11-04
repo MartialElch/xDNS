@@ -8,7 +8,6 @@
         protected $conn = null;
 
         function __construct($host, $user, $passwd, $db) {
-            printf("Database::construct - entry<br>\n");
             if ($host != null) {
                 $this->DB_HOST = $host;
             } else {
@@ -29,7 +28,6 @@
             } else {
                 error("Database::__construct - host not given");
             }
-            printf("Database::construct - exit<br>\n");
         }
 
         function connect() {
