@@ -9,7 +9,7 @@
     	printf("Connection failed: %s<br>\n", $conn->connect_error);
     } else {
         $db->connect();
-        $list = $db->getList("SELECT * FROM DNS_Record WHERE TYPE='A' ORDER BY name");
+        $list = $db->getRecordsA();
 
         printf("<form action='edit.php' method='post'>\n");
         printf("<table>\n");
