@@ -9,9 +9,10 @@
 
         $db = new Database($DB_HOST, $DB_USERNAME, $DB_PASSWORD, $DB_DATABASE);
         $db->connect();
-        $record = new Record($db);
+        $record = new RecordA($db);
 
         $record->name = $_POST['hostname'];
+        $record->ip = $_POST['ip'];
         if ($record->validate() == 0) {
             $record->insert();
         }
