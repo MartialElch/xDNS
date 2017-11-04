@@ -92,6 +92,23 @@
             return $list;
         }
 
+        function getSystems() {
+            $names = "id, MAC, Description";
+            $query = "SELECT ".$names." FROM System ORDER BY name";
+            $result = $this->getList($query);
+
+            $list = array();
+            foreach ($result as $entry) {
+                $system = new System($this);
+                $system->id = $entry[0];
+                $system->mac = $entry[1];
+                $system->description = $entry[2];
+
+                $list[] = $system;
+            }
+            return $list;
+        }
+
         function show() {
             printf("Database::construct - DB_HOST = %s<br>\n", $this->DB_HOST);
         }
@@ -275,5 +292,23 @@
                 printf("mysql: %s<br>\n", $res->error);
             }
         }
+    }
+
+    class System {
+        public $id;
+        public $mac;
+        public $name;
+        public $description;
+
+        protected $db;
+
+        function __construct($db = null) {
+            if ($db != null) {
+                $this->db = $db;
+            } else {
+                die("class Record->__construct - db not given<br>\n");
+            }
+        }
+
     }
 ?>
