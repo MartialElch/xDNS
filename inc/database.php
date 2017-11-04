@@ -71,6 +71,27 @@
             return $list;
         }
 
+        function getRecordsA() {
+            $names = "id, name, type, target_id";
+            $query = "SELECT ".$names." FROM DNS_Record WHERE type='A' ORDER BY name";
+            $result = $this->getList($query);
+
+            $list = array();
+            foreach ($result as $entry) {
+                $record = new RecordA($this);
+                $record->id = $entry[0];
+                $record->name = $entry[1];
+                $record->type = $entry[2];
+
+                $ptr = new RecordPTR($this);
+                $ptr->get($entry[3]);
+                $record->ip = $ptr->name;
+
+                $list[] = $record;
+            }
+            return $list;
+        }
+
         function show() {
             printf("Database::construct - DB_HOST = %s<br>\n", $this->DB_HOST);
         }
