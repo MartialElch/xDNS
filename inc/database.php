@@ -94,7 +94,7 @@
 
         function getSystems() {
             $names = "id, MAC, description";
-            $query = "SELECT ".$names." FROM System ORDER BY name";
+            $query = "SELECT ".$names." FROM System ORDER BY description";
             $result = $this->getList($query);
 
             $list = array();
