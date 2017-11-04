@@ -25,4 +25,8 @@
     	$db->close();
     }
 
+    printf("<p>\n");
+    printf("<a href=add.php>Add Host</a>\n");
+    printf("</p>\n");
+
 ?>
