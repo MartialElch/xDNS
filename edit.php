@@ -1,4 +1,7 @@
 <?php
+    include_once 'inc/config.php';
+    require_once 'inc/database.php';
+
     printf("<h1>xDNS - Edit</h1>\n");
     $db = new Database($DB_HOST, $DB_USERNAME, $DB_PASSWORD, $DB_DATABASE);
 
