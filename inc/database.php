@@ -108,10 +108,6 @@
             }
             return $list;
         }
-
-        function show() {
-            printf("Database::construct - DB_HOST = %s<br>\n", $this->DB_HOST);
-        }
     }
 
     class Record {
@@ -131,8 +127,6 @@
         }
 
         function get($id) {
-            printf("Record::get - id = %s<br>\n", $id);
-
             $names = "id, name, type, target_id";
             $query = "SELECT ".$names." FROM DNS_Record WHERE id='$id'";
             $entry = $this->db->getEntry($query);
@@ -167,7 +161,7 @@
         function update($id) {
             $values = sprintf("name='%s', type='%s'", $this->name, $this->type);
             $query = "UPDATE DNS_Record SET ".$values." WHERE id='$id'";
-            printf("mysql: %s<br>\n", $query);
+
             $res = $this->db->execute($query);
             if ($res == TRUE) {
                 printf("mysql: record updated successfully<br>\n");
@@ -234,7 +228,6 @@
 
             $values = sprintf("name='%s', type='%s', target_id='%s'", $this->name, $this->type, $this->target_id);
             $query = "UPDATE DNS_Record SET ".$values." WHERE id='".$id."'";
-            printf("mysql: %s<br>\n", $query);
             $res = $this->db->execute($query);
             if ($res == TRUE) {
                 printf("mysql: record updated successfully<br>\n");
@@ -299,6 +292,8 @@
         public $mac;
         public $name;
         public $description;
+        public $unknown;
+        public $record_id;
 
         protected $db;
 
@@ -307,6 +302,30 @@
                 $this->db = $db;
             } else {
                 die("class Record->__construct - db not given<br>\n");
+            }
+        }
+
+        function get($id) {
+            $names = "id, MAC, description, unknown, record_id";
+            $query = "SELECT ".$names." FROM System WHERE id='$id'";
+            $entry = $this->db->getEntry($query);
+
+            $this->id = $entry[0];
+            $this->mac = $entry[1];
+            $this->description = $entry[2];
+            $this->unknown = $entry[3];
+            $this->record_id = $entry[4];
+        }
+
+        function update($id) {
+            $values = sprintf("MAC='%s', description='%s', unknown='%s', record_id='%s'", $this->mac, $this->description, $this->unknown, $this->record_id);
+            $query = "UPDATE System SET ".$values." WHERE id='$id'";
+            $res = $this->db->execute($query);
+            if ($res == TRUE) {
+                printf("mysql: record updated successfully<br>\n");
+            } else {
+                printf("mysql: update error<br>\n");
+                printf("mysql: %s<br>\n", $res->error);
             }
         }
 
