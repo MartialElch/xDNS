@@ -28,10 +28,11 @@
     }
 
     if (isset($_POST['formUpdateSystem'])) {
+        $id = $_POST['id'];
         $system = new System($db);
         $system->mac = $_POST['mac'];
         $system->description = $_POST['description'];
-        $system->update($_POST['id']);
+        $system->update($id);
 
         printf("<p>\n");
         printf("<h2>Edit System</h2>\n");
