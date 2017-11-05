@@ -18,8 +18,8 @@
         printf("<tr><th>Hostname</th><th>Type</th><th>IP Address</th></tr>\n");
         foreach ($list as $record) {
             printf("<tr><td>%s</td> <td>%s</td><td>%s</td>\n", $record->name, $record->type, $record->ip);
-            printf("<td><input name='formEdit' type='image' value='%d' src='img/edit.gif'/></td>\n", $record->id);
-            printf("<td><input name='formDelete' type='image' value='%d' src='img/delete.gif' formaction='delete.php'/></td>\n", $record->id);
+            printf("<td><input name='formEdit' type='image' value='%d' src='img/edit.svg.png'/></td>\n", $record->id);
+            printf("<td><input name='formDelete' type='image' value='%d' src='img/delete.svg.png' formaction='delete.php'/></td>\n", $record->id);
             printf("</tr>\n");
         }
         printf("</table>\n");
@@ -28,13 +28,16 @@
         printf("<h2>Systems</h2>\n");
         $list = $db->getSystems();
 
+        printf("<form action='system.php' method='post'>\n");
         printf("<table>\n");
         printf("<tr><th>MAC Address</th><th>Hostname</th><th>Description</th></tr>\n");
         foreach ($list as $system) {
             printf("<tr><td>%s</td> <td>%s</td><td>%s</td>\n", $system->mac, $system->name, $system->description);
+            printf("<td><input name='formEditSystem' type='image' value='%d' src='img/edit.svg.png'/></td>\n", $system->id);
             printf("</tr>\n");
         }
         printf("</table>\n");
+        printf("</form>\n");
 
     	$db->close();
     }
