@@ -35,14 +35,16 @@
 
         printf("<p>\n");
         printf("<h2>Edit System</h2>\n");
-        printf("<br>\n");
-        printf("<br>\n");
+        $system->get($id);
+        printf("<form method='post' action='system.php'>\n");
+        printf("<table>\n");
+        printf("<tr><td>MAC Address:</td> <td><input type='text' name='mac' value='%s'></td></tr>\n", $system->mac);
+        printf("<tr><td>Description:</td> <td><input type='text' name='description' value='%s'></td></tr>\n", $system->description);
+        printf("</table>\n");
+        printf("<input type='hidden' name='id' value='%s'>\n", $id);
+        printf("<p><input name='formUpdateSystem' type='submit' value='update'/></p>\n");
+        printf("</form>\n");
         printf("</p>\n");
-
-        printf("POST Update System<br>\n");
-        printf("<pre>\n");
-        print_r($_POST);
-        printf("</pre>\n");
 
         $list = $db->getSystems();
     }
