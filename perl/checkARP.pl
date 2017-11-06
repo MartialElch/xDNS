@@ -20,7 +20,7 @@ my @mac;
 my $i = 0;
 foreach (@arp) {
     chomp;
-    print $i++, ": ", $_, "\n";
+    # print $i++, ": ", $_, "\n";
     if (/^(\S+)\s+\(($IPv4)\)\s+at\s+($MAC)/) {
         print $2, " ", $3, "\n";
         push @ip, $2;
