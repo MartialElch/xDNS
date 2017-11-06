@@ -22,7 +22,7 @@ sub getByMac {
     my $mac = uc(shift);
 
     my $db = $self->{Database};
-    my $query = sprintf("SELECT * FROM System WHERE MAC='$mac'", $mac);
+    my $query = sprintf("SELECT * FROM System WHERE MAC='%s'", $mac);
     my $result = $db->getEntry($query);
 
     if (defined $result) {
