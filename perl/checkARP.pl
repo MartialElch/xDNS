@@ -59,20 +59,14 @@ foreach (@mac) {
     my $system = new System(database => $db);
     $system->getByMac($_);
     if ($system->{MAC} ne "") {
-        $system->show();
+        # $system->show();
     } else {
         $system->MAC($_);
         $system->insert();
+        $system->getByMac($_);
+        $system->show();
     }
 }
-
-my $system = new System(database => $db);
-$system->getByMac("c8:0e:14:cc:9d:ca");
-$system->show();
-$system = new System(database => $db);
-$system->getByMac("80:ea:96:e9:2c:8a");
-$system->show();
-# $system->insert();
 
 $db->disconnect();
 exit;
