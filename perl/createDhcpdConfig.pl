@@ -1,6 +1,8 @@
 #!/usr/bin/perl -w
 use strict;
 
+use lib ".";
+
 use DBI;
 use DBConfig;
 use DHCP;
