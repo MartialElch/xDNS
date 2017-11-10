@@ -14,19 +14,6 @@ sub new {
 	return $self;
 }
 
-sub print {
-        my $self = shift;
-        return;
-}
-
-sub show {
-        my $self = shift;
-
-        printf("Name = %s\n", $self->{Name});
-
-        return;
-}
-
 #-------------------------------------------------------------------------------
 package Bind9::RecordA;
 use strict;
@@ -47,22 +34,10 @@ sub new {
 	return $self;
 }
 
-sub print {
+sub sprint {
         my $self = shift;
 
-        my $fullname = $self->{Name}.".";
-        printf("%-32s IN     A       %-s\n", $fullname, $self->{IpAddress});
-
-        return;
-}
-
-sub show {
-        my $self = shift;
-
-        my $fullname = $self->{Name}.".";
-        printf("%-32s IN     A       %-32s\n", $fullname, $self->{IpAddress});
-
-        return;
+        return sprintf("%-17s IN     A       %-s\n", $self->{Name}, $self->{IpAddress});
 }
 
 #-------------------------------------------------------------------------------
@@ -85,22 +60,10 @@ sub new {
 	return $self;
 }
 
-sub print {
+sub sprint {
         my $self = shift;
 
-        my $fullname = $self->{Name}.".";
-        printf("%-32s IN     CNAME   %-s\n", $fullname, $self->{Alias});
-
-        return;
-}
-
-sub show {
-        my $self = shift;
-
-        my $fullname = $self->{Name}.".";
-        printf("%-32s IN     CNAME   %-32s\n", $fullname, $self->{Alias});
-
-        return;
+        return sprintf("%-17s IN     CNAME   %-s.\n", $self->{Name}, $self->{Alias});
 }
 
 #-------------------------------------------------------------------------------
@@ -116,6 +79,7 @@ sub new {
 	my $self = {
 		Name      => $param{"name"},
 		IpAddress => $param{"ip"},
+		Subnet    => $param{"subnet"},
 		Type      => "NS",
 	};
 	bless $self, $class;
@@ -158,26 +122,15 @@ sub getHostPart {
 	return $ip & (~$mask);
 }
 
-sub print {
+sub sprint {
         my $self = shift;
 
         my $fullname = $self->{Name}.".";
-        printf("%-7s IN      PTR     %-s\n", $self->getHostPart, $fullname);
-
-        return;
-}
-
-sub show {
-        my $self = shift;
-
-        my $fullname = $self->{Name}.".";
-        printf("%-32s IN     PTR     %-32s\n", $self->{IpAddress}, $fullname);
-
-        return;
+        return sprintf("%-7s IN      PTR     %-s\n", $self->getHostPart, $fullname);
 }
 
 #-------------------------------------------------------------------------------
-package Bind9::Subnet;
+package Bind9::Zone;
 use strict;
 
 sub new {
@@ -185,40 +138,16 @@ sub new {
 	my %param = @_;
 
 	my $self = {
-		Address => $param{"address"},
-		Mask    => $param{"mask"},
-	};
-	bless $self, $class;
-
-	return $self;
-}
-
-sub show {
-	my $self = shift;
-	
-	printf("Subnet Address = %s\n", $self->{Address});
-	printf("Subnet Mask    = %s\n", $self->{Mask});
-	return;
-}
-
-#-------------------------------------------------------------------------------
-package Bind9::Domain;
-use strict;
-
-sub new {
-	my $class = shift;
-	my %param = @_;
-
-	my $self = {
-		Name    => $param{"name"},
-	        Record  => \@{[]},
-		Serial  => $param{"serial"},
-		Refresh => "604800",
-		Retry   => "86400",
-		Expire  => "2419200",
-		Cache   => "604800",
-		TTL     => "604800",
-	        Subnet  => \@{[]},
+	        Name     => $param{name},
+	        Filename => "db.".$param{name},
+	        Domain   => $param{domain},
+		Serial   => "0",
+		Refresh  => "604800",
+		Retry    => "86400",
+		Expire   => "2419200",
+		Cache    => "604800",
+		TTL      => "604800",
+	        Record   => \@{[]},
 	};
 	bless $self, $class;
 
@@ -227,63 +156,11 @@ sub new {
 
 sub add {
         my $self = shift;
-	my %param = @_;
+        my $record = shift;
 
-        my $record;
-
-        if ($param{"type"} eq "A") {
-                $record = new Bind9::RecordA(name => $param{"name"}.".".$self->{Name},
-                                             ip => $param{"ip"});
-        } elsif ($param{"type"} eq "PTR") {
-                $record = new Bind9::RecordPTR(ip => $param{"ip"},
-                                               name => $param{"name"}.".".$self->{Name},
-                                               netmask => $self->getSubnet($param{"ip"})->{Mask});
-        } elsif ($param{"type"} eq "CNAME") {
-                $record = new Bind9::RecordCNAME(name => $param{"name"}.".".$self->{Name},
-                                                 alias => $param{"alias"});
-        } elsif ($param{"type"} eq "NS") {
-                $record = new Bind9::RecordNS(name => $param{"name"}.".".$self->{Name},
-                                              ip => $param{"ip"});
-        }
-
-	push @{$self->{Record}}, $record;
+        push @{$self->{Record}}, $record;
 
         return;
-}
-
-sub addSubnet {
-        my $self = shift;
-	my %param = @_;
-
-	my $subnet = new Bind9::Subnet(address => $param{"address"},
-	                               mask    => $param{"mask"});
-	push @{$self->{Subnet}}, $subnet;
-
-        return $subnet;
-}
-
-sub getSubnet {
-        my $self = shift;
-	my $ip = shift;
-
-        foreach (@{$self->{Subnet}}) {
-		$ip =~ /(\d+)\.(\d+)\.(\d+)\.(\d+)/;
-		my $hex = hex(sprintf("%02x%02x%02x%02x", $1, $2, $3, $4));
-
-		my $mask = $_->{Mask};
-		$mask =~ /(\d+)\.(\d+)\.(\d+)\.(\d+)/;
-		$mask = hex(sprintf("%02x%02x%02x%02x", $1, $2, $3, $4));
-
-		my $subnet = $_->{Address};
-		$subnet =~ /(\d+)\.(\d+)\.(\d+)\.(\d+)/;
-		$subnet = hex(sprintf("%02x%02x%02x%02x", $1, $2, $3, $4));
-
-        	my $net = $hex & $mask;
-		if ($subnet == $net) {
-	                return $_;
-		}
-        }
-	return;	
 }
 
 sub getRecordsA {
@@ -344,79 +221,253 @@ sub getRecordsPTR {
 	return \@list;	
 }
 
-sub printHeader {
+sub print {
+        my $self = shift;
+        my $text = shift;
+
+        use IO::File;
+        
+        my $file = new IO::File($self->{Filename}, 'w');
+        print $file $text;
+        $file->close;
+
+        return;
+}
+
+sub sprintHeader {
         my $self = shift;
 
+        my $text;
 	my $ns = @{$self->getRecordsNS()}[0];
 
 	# print header
-        printf("\$TTL    %-8d\n", $self->{TTL});
-        printf("@       IN      SOA     %s. admin.%s. (\n", $ns->{Name}, $self->{Name});
-        printf("                       %8d         ; Serial\n", $self->{Serial});
-        printf("                       %8d         ; Refresh\n", $self->{Refresh});
-        printf("                       %8d         ; Retry\n", $self->{Retry});
-        printf("                       %8d         ; Expire\n", $self->{Expire});
-        printf("                       %8d )       ; Negative Cache TTL\n", $self->{Cache});
+        $text .= sprintf("\$TTL    %-d\n", $self->{TTL});
+        $text .= sprintf("@       IN      SOA     %s.%s. admin.%s. (\n", $ns->{Name}, $self->{Domain}, $self->{Domain});
+        $text .= sprintf("                       %8d         ; Serial\n", $self->{Serial});
+        $text .= sprintf("                       %8d         ; Refresh\n", $self->{Refresh});
+        $text .= sprintf("                       %8d         ; Retry\n", $self->{Retry});
+        $text .= sprintf("                       %8d         ; Expire\n", $self->{Expire});
+        $text .= sprintf("                       %8d )       ; Negative Cache TTL\n", $self->{Cache});
 
 	# print nameserver records
-        printf("\n");
-        printf("; name servers - NS records\n");
+        $text .= sprintf("\n");
+        $text .= sprintf("; name servers - NS records\n");
 	foreach (@{$self->getRecordsNS()}) {
-		my $fullname = $_->{Name}.".";
-	        printf("        IN      NS      %s\n", $fullname);
+		my $fullname = $_->{Name}.".".$self->{Domain}.".";
+	        $text .= sprintf("@                 IN      NS      %s\n", $fullname);
         }
-        printf("\n");
-	return;	
+        $text .= sprintf("\n");
+
+	return $text;	
 }
 
-sub printForwardZone {
+# setter and getter
+sub Serial {
+        my $self = shift;
+        my $input = shift;
+        
+        if (defined $input) {
+                $self->{Serial} = $input;
+                return;
+        }
+        return $self->{Serial};
+}
+
+#-------------------------------------------------------------------------------
+package Bind9::Zone::Forward;
+use strict;
+
+use base qw(Bind9::Zone);
+
+sub print {
         my $self = shift;
 
-	$self->printHeader();
-
-        printf("; name servers - A records\n");
+        my $text = $self->sprintHeader();
+        $text .= sprintf("; name servers - A records\n");
 	foreach (@{$self->getRecordsNS()}) {
-	        $_->print();
+	        $text .= $_->sprint();
 	}
-        printf("\n");
+        $text .= sprintf("\n");
 
 	# print CNAME records
-        printf("; alias names\n");
+        $text .= sprintf("; alias names\n");
 	foreach (@{$self->getRecordsCNAME()}) {
-	        $_->print();
+	        $text .= $_->sprint();
 	}
-        printf("\n");
+        $text .= sprintf("\n");
 
 	# print A records
-        printf("; - A records\n");
+	my $subnet = ${$self->getRecordsNS()}[0]->{Subnet}->{Address};
+        $text .= sprintf("; %s - A records\n", $subnet);
 	foreach (@{$self->getRecordsA()}) {
-	        $_->print();
+	        $text .= $_->sprint();
 	}
+
+        print $text;
+        $self->SUPER::print($text);
 
         return;
 }
 
-sub printReverseZone {
+#-------------------------------------------------------------------------------
+package Bind9::Zone::Reverse;
+use strict;
+
+use base qw(Bind9::Zone);
+
+sub print {
         my $self = shift;
 
-	$self->printHeader();
+        my $text = $self->sprintHeader();
 
 	# print PTR records
 	foreach (@{$self->getRecordsPTR()}) {
-	        $_->print();
+	        $text .= $_->sprint();
 	}
+
+        print $text;
+        $self->SUPER::print($text);
 
         return;
 }
 
-sub show {
+#-------------------------------------------------------------------------------
+package Bind9::Subnet;
+use strict;
+
+sub new {
+	my $class = shift;
+	my %param = @_;
+
+	my $self = {
+		Name    => $param{"name"},
+		Address => $param{"address"},
+		Mask    => $param{"mask"},
+	        Record  => \@{[]},
+	};
+	bless $self, $class;
+
+	return $self;
+}
+
+# setter and getter
+sub Zone {
         my $self = shift;
+        my $input = shift;
         
-        printf("Domain: %s\n", $self->{Name});
-        foreach (@{$self->{Record}}) {
-                $_->show;
+        if (defined $input) {
+                $self->{Zone} = $input;
+                return;
+        }
+        return $self->{Zone};
+}
+
+#-------------------------------------------------------------------------------
+package Bind9::Domain;
+use strict;
+
+sub new {
+	my $class = shift;
+	my %param = @_;
+
+	my $self = {
+		Name    => $param{"name"},
+	        Record  => \@{[]},
+		Serial  => $param{"serial"},
+	        Subnet  => \@{[]},
+	        Zone   => \@{[]},
+	};
+	bless $self, $class;
+
+        my $zone = new Bind9::Zone::Forward(name => $param{"name"}, domain => $self->{Name});
+	push @{$self->{Zone}}, $zone;
+
+	return $self;
+}
+
+sub add {
+        my $self = shift;
+	my %param = @_;
+
+        my $record;
+
+        if ($param{"type"} eq "A") {
+                $record = new Bind9::RecordA(name => $param{"name"},
+                                             ip   => $param{"ip"});
+                @{$self->{Zone}}[0]->add($record);
+        } elsif ($param{"type"} eq "PTR") {
+                my $subnet = $self->getSubnet($param{"ip"});
+                my $zone = $subnet->Zone();
+                $record = new Bind9::RecordPTR(ip      => $param{"ip"},
+                                               name    => $param{"name"}.".".$self->{Name},
+                                               netmask => $subnet->{Mask});
+                $zone->add($record);
+        } elsif ($param{"type"} eq "CNAME") {
+                $record = new Bind9::RecordCNAME(name  => $param{"name"},
+                                                 alias => $param{"alias"});
+                @{$self->{Zone}}[0]->add($record);
+        } elsif ($param{"type"} eq "NS") {
+                my $subnet = $self->getSubnet($param{"ip"});
+                my $zone = $subnet->Zone();
+                $record = new Bind9::RecordNS(name   => $param{"name"},
+                                              ip     => $param{"ip"},
+                                              subnet => $subnet);
+                @{$self->{Zone}}[0]->add($record);
+                $zone->add($record);
         }
 
+        return;
+}
+
+sub addSubnet {
+        my $self = shift;
+	my %param = @_;
+
+	my $subnet = new Bind9::Subnet(name    => $param{"name"},
+	                               address => $param{"address"},
+	                               mask    => $param{"mask"});
+	push @{$self->{Subnet}}, $subnet;
+
+        my $zone = new Bind9::Zone::Reverse(name => $param{"name"}, domain => $self->{Name});
+	push @{$self->{Zone}}, $zone;
+        $subnet->Zone($zone);
+
+        return $subnet;
+}
+
+sub getSubnet {
+        my $self = shift;
+	my $ip = shift;
+
+        foreach (@{$self->{Subnet}}) {
+	        $ip =~ /(\d+)\.(\d+)\.(\d+)\.(\d+)/;
+	        my $hex = hex(sprintf("%02x%02x%02x%02x", $1, $2, $3, $4));
+
+	        my $mask = $_->{Mask};
+	        $mask =~ /(\d+)\.(\d+)\.(\d+)\.(\d+)/;
+	        $mask = hex(sprintf("%02x%02x%02x%02x", $1, $2, $3, $4));
+
+	        my $subnet = $_->{Address};
+	        $subnet =~ /(\d+)\.(\d+)\.(\d+)\.(\d+)/;
+	        $subnet = hex(sprintf("%02x%02x%02x%02x", $1, $2, $3, $4));
+
+                my $net = $hex & $mask;
+	        if ($subnet == $net) {
+	                return $_;
+	        }
+        }
+
+	return;	
+}
+
+sub print {
+        my $self = shift;
+        
+        foreach (@{$self->{Zone}}) {
+                $_->Serial($self->{Serial});
+                $_->print();
+        }
+        
         return;
 }
 
@@ -451,18 +502,7 @@ sub print {
         my $self = shift;
 
         foreach (@{$self->{Domain}}) {
-                $_->printForwardZone();
-                # $_->printReverseZone();
-        }
-
-        return;
-}
-
-sub show {
-        my $self = shift;
-
-        foreach (@{$self->{Domain}}) {
-                $_->show;
+                $_->print();
         }
 
         return;
