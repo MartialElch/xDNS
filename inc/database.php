@@ -71,6 +71,24 @@
             return $list;
         }
 
+        function getDomains() {
+            $names = "id, name, type";
+            $query = "SELECT ".$names." FROM Domain ORDER BY name";
+            $result = $this->getList($query);
+
+            $list = array();
+            foreach ($result as $entry) {
+                $domain = new Domain($this);
+                $domain->id = $entry[0];
+                $domain->name = $entry[1];
+                $domain->type = $entry[2];
+
+                $list[] = $domain;
+            }
+
+            return $list;
+        }
+
         function getRecordsA() {
             $names = "id, name, type, target_id";
             $query = "SELECT ".$names." FROM DNS_Record WHERE type='A' ORDER BY name";
@@ -89,6 +107,24 @@
 
                 $list[] = $record;
             }
+
+            return $list;
+        }
+
+        function getSubnets() {
+            $names = "id, name";
+            $query = "SELECT ".$names." FROM Subnet ORDER BY name";
+            $result = $this->getList($query);
+
+            $list = array();
+            foreach ($result as $entry) {
+                $subnet = new Subnet($this);
+                $subnet->id = $entry[0];
+                $subnet->name = $entry[1];
+
+                $list[] = $subnet;
+            }
+
             return $list;
         }
 
@@ -109,14 +145,21 @@
 
                 $list[] = $system;
             }
+
             return $list;
         }
+    }
+
+    class Domain {
+        public $id;
+        public $name;
     }
 
     class Record {
         public $id;
         public $name;
         public $type;
+        public $domain_id;
 
         protected $db;
         protected $target_id;
@@ -130,7 +173,7 @@
         }
 
         function get($id) {
-            $names = "id, name, type, target_id";
+            $names = "id, name, type, target_id, domain_id";
             $query = "SELECT ".$names." FROM DNS_Record WHERE id='$id'";
             $entry = $this->db->getEntry($query);
 
@@ -138,6 +181,7 @@
             $this->name = $entry[1];
             $this->type = $entry[2];
             $this->target_id = $entry[3];
+            $this->domain_id = $entry[4];
         }
 
         function insert() {
@@ -159,6 +203,8 @@
             printf("id = %s<br>\n", $this->id);
             printf("name = %s<br>\n", $this->name);
             printf("type = %s<br>\n", $this->type);
+            printf("domain_id = %s<br>\n", $this->domain_id);
+            printf("subnet_id = %s<br>\n", $this->subnet_id);
         }
 
         function update($id) {
@@ -181,12 +227,14 @@
     
     class RecordA extends Record {
         public $ip;
+        public $subnet_id;
 
         function get($id) {
             parent::get($id);
-            $record = new RecordPTR($this->db);
-            $record->get($this->target_id);
-            $this->ip = $record->name;
+            $ptr = new RecordPTR($this->db);
+            $ptr->get($this->target_id);
+            $this->ip = $ptr->name;
+            $this->subnet_id = $ptr->domain_id;
         }
 
         function insert() {
@@ -214,11 +262,13 @@
             printf("mysql: get ip address %s<br>\n", $this->ip);
             $ptr = new RecordPTR($this->db);
             $res = $ptr->getByName($this->ip);
+            $ptr->show();
             printf("DEBUG RecordA::update: %s<br>\n", $res);
             if ($res) {
                 printf("ptr: found %s %s<br>\n", $ptr->name, $ptr->id);
                 $this->target_id = $ptr->id;
                 $ptr->target_id = $id;
+                $ptr->domain_id = $this->subnet_id;
                 $ptr->update($ptr->id);
             } else {
                 printf("ptr: not found %s<br>\n", $this->ip);
@@ -229,7 +279,7 @@
                 $this->target_id = $ptr->id;
             }
 
-            $values = sprintf("name='%s', type='%s', target_id='%s'", $this->name, $this->type, $this->target_id);
+            $values = sprintf("name='%s', type='%s', domain_id='%s', target_id='%s'", $this->name, $this->type, $this->domain_id, $this->target_id);
             $query = "UPDATE DNS_Record SET ".$values." WHERE id='".$id."'";
             $res = $this->db->execute($query);
             if ($res == TRUE) {
@@ -245,16 +295,15 @@
         public $hostname;
 
         function getByName($name) {
-            $names = "id, name, type, target_id, record_id, fixed";
+            $names = "id, name, type, domain_id, target_id";
             $query = "SELECT ".$names." FROM DNS_Record WHERE name='$name'";
             $entry = $this->db->getEntry($query);
             if (isset($entry)) {
                 $this->id = $entry[0];
                 $this->name = $entry[1];
                 $this->type = $entry[2];
-                $this->target_id = $entry[3];
-                $this->record_id = $entry[4];
-                $this->fixed = $entry[5];
+                $this->domain_id = $entry[3];
+                $this->target_id = $entry[4];
                 return 1;
             } else {
                 return 0;
@@ -264,8 +313,8 @@
         function insert() {
             $this->type = "PTR";
 
-            $names = "(name, type, target_id, record_id, fixed)";
-            $values = sprintf("('%s', '%s', '%s', '%s', '%s')", $this->name, $this->type, $this->target_id, $this->record_id, $this->fixed);
+            $names = "(name, type, domain_id, target_id)";
+            $values = sprintf("('%s', '%s', '%s', '%s')", $this->name, $this->type, $this->domain_id, $this->target_id);
             $query = "INSERT INTO DNS_Record ".$names." VALUES ".$values;
             printf("mysql RecordPTR::insert: %s<br>\n", $query);
 
@@ -279,7 +328,7 @@
         }
 
         function update($id) {
-            $values = sprintf("name='%s', type='%s', target_id='%s', record_id='%s', fixed='%s'", $this->name, $this->type, $this->target_id, $this->record_id, $this->fixed);
+            $values = sprintf("name='%s', type='%s', domain_id='%s', target_id='%s'", $this->name, $this->type, $this->domain_id, $this->target_id);
             $query = "UPDATE DNS_Record SET ".$values." WHERE id='$id'";
             printf("mysql: %s<br>\n", $query);
             $res = $this->db->execute($query);
@@ -292,6 +341,12 @@
         }
     }
 
+    class Subnet {
+        public $id;
+        public $name;
+    }
+
+#-------------------
     class System {
         public $id;
         public $mac;
