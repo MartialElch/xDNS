@@ -93,7 +93,7 @@
         }
 
         function getSystems() {
-            $names = "id, MAC, description";
+            $names = "id, MAC, description, unknown, record_id, fixed";
             $query = "SELECT ".$names." FROM System ORDER BY description";
             $result = $this->getList($query);
 
@@ -103,6 +103,9 @@
                 $system->id = $entry[0];
                 $system->mac = $entry[1];
                 $system->description = $entry[2];
+                $system->unknown = $entry[3];
+                $system->record_id = $entry[4];
+                $system->fixed = $entry[5];
 
                 $list[] = $system;
             }
@@ -242,7 +245,7 @@
         public $hostname;
 
         function getByName($name) {
-            $names = "id, name, type, target_id";
+            $names = "id, name, type, target_id, record_id, fixed";
             $query = "SELECT ".$names." FROM DNS_Record WHERE name='$name'";
             $entry = $this->db->getEntry($query);
             if (isset($entry)) {
@@ -250,6 +253,8 @@
                 $this->name = $entry[1];
                 $this->type = $entry[2];
                 $this->target_id = $entry[3];
+                $this->record_id = $entry[4];
+                $this->fixed = $entry[5];
                 return 1;
             } else {
                 return 0;
@@ -259,8 +264,8 @@
         function insert() {
             $this->type = "PTR";
 
-            $names = "(name, type, target_id)";
-            $values = sprintf("('%s', '%s', '%s')", $this->name, $this->type, $this->target_id);
+            $names = "(name, type, target_id, record_id, fixed)";
+            $values = sprintf("('%s', '%s', '%s', '%s', '%s')", $this->name, $this->type, $this->target_id, $this->record_id, $this->fixed);
             $query = "INSERT INTO DNS_Record ".$names." VALUES ".$values;
             printf("mysql RecordPTR::insert: %s<br>\n", $query);
 
@@ -274,7 +279,7 @@
         }
 
         function update($id) {
-            $values = sprintf("name='%s', type='%s', target_id='%s'", $this->name, $this->type, $this->target_id);
+            $values = sprintf("name='%s', type='%s', target_id='%s', record_id='%s', fixed='%s'", $this->name, $this->type, $this->target_id, $this->record_id, $this->fixed);
             $query = "UPDATE DNS_Record SET ".$values." WHERE id='$id'";
             printf("mysql: %s<br>\n", $query);
             $res = $this->db->execute($query);
@@ -294,6 +299,7 @@
         public $description;
         public $unknown;
         public $record_id;
+        public $fixed;
 
         protected $db;
 
@@ -315,10 +321,11 @@
             $this->description = $entry[2];
             $this->unknown = $entry[3];
             $this->record_id = $entry[4];
+            $this->fixed = $entry[5];
         }
 
         function update($id) {
-            $values = sprintf("MAC='%s', description='%s', unknown='%s', record_id='%s'", $this->mac, $this->description, $this->unknown, $this->record_id);
+            $values = sprintf("MAC='%s', description='%s', unknown='%s', record_id='%s', fixed='%s'", $this->mac, $this->description, $this->unknown, $this->record_id, $this->fixed);
             $query = "UPDATE System SET ".$values." WHERE id='$id'";
             $res = $this->db->execute($query);
             if ($res == TRUE) {
