@@ -1,6 +1,8 @@
 #!/usr/bin/perl -w
 use strict;
 
+use lib ".";
+
 use DBI;
 use DBConfig;
 use Bind9;
@@ -30,14 +32,26 @@ print "\n";
 # add records to domain
 foreach (@row) {
     if ($_->{type} eq 'A') {
-        my $ip = "";
         if (exists $name{$_->{target_id}}) {
-            $ip = $name{$_->{target_id}};
+            my $ip = $name{$_->{target_id}};
+            $domain->add(name => $_->{name}, ip => $ip, type => "A");
         }
-        $domain->add(
-            name => $_->{name},
-            ip => $ip, 
-            type => "A");
+    } elsif ($_->{type} eq 'PTR') {
+        if (exists $name{$_->{target_id}}) {
+            my $ip = $_->{name};
+            my $name = $name{$_->{target_id}};
+            $domain->add(name => $name, ip => $ip, type => "PTR");
+        }
+    } elsif ($_->{type} eq 'CNAME') {
+        if (exists $name{$_->{target_id}}) {
+            my $alias = $name{$_->{target_id}};
+            $domain->add(name => $_->{name}, alias => $alias, type => "CNAME");
+        }
+    } elsif ($_->{type} eq 'NS') {
+        if (exists $name{$_->{target_id}}) {
+            my $ip = $name{$_->{target_id}};
+            $domain->add(name => $_->{name}, ip => $ip, type => "NS");
+        }
     }
 }
 
