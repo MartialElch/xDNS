@@ -103,8 +103,8 @@ sub print {
         if ($_->Type() eq "Host") {
             $_->print();
         }
+        printf("\n");
     }
-    printf("\n");
 
     return;
 }

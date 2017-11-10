@@ -1,3 +1,4 @@
+#-------------------------------------------------------------------------------
 package Database;
 use strict;
 
@@ -61,6 +62,18 @@ sub getEntry {
     return $result[0];
 }
 
+sub getList {
+    my $self = shift;
+    my $query = shift;
+
+    my $conn = $self->{Connection};
+    my $h = $conn->prepare($query);
+    my $ret = $h->execute();
+    my $list = $h->fetchall_arrayref({});
+
+    return $list;
+}
+
 sub insert {
     my $self = shift;
     my $query = shift;
@@ -72,5 +85,7 @@ sub insert {
     return;
 }
 
+#-------------------------------------------------------------------------------
 1;
 __END__
+#-------------------------------------------------------------------------------
