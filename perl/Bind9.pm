@@ -147,7 +147,7 @@ sub new {
 		Expire   => "2419200",
 		Cache    => "604800",
 		TTL      => "604800",
-	        Record   => \@{[]},
+	    Record   => \@{[]},
 	};
 	bless $self, $class;
 
