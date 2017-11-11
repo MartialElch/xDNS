@@ -13,19 +13,36 @@ my @DSN = ("DBI:mysql:database=$DBConfig::DB_DATABASE;host=$DBConfig::DB_HOSTNAM
 my $dbc = DBI->connect(@DSN, { PrintError => 0, AutoCommit => 1, });
 die $DBI::errstr unless $dbc;
 
-my $query = "SELECT * FROM DNS_Record";
+my $query = "SELECT * FROM Domain";
 my $dbh = $dbc->prepare($query);
+print $DBI::errstr unless $dbh;
+$dbh->execute();
+my @domainlist = @{$dbh->fetchall_arrayref({})};
+
+my %domain;
+foreach (@domainlist) {
+    $domain{$_->{id}} = $config->add(name => $_->{name}, serial => $_->{serial});
+
+    my $query = sprintf("SELECT * FROM Subnet WHERE domain_id=%s", $_->{id});
+    my $dbh = $dbc->prepare($query);
+    print $DBI::errstr unless $dbh;
+    $dbh->execute();
+    my @subnetlist = @{$dbh->fetchall_arrayref({})};
+    foreach my $subnet (@subnetlist) {
+        $domain{$_->{id}}->addSubnet(name => $subnet->{name}, address => $subnet->{address}, mask => $subnet->{mask});
+    }
+}
+
+$query = "SELECT * FROM DNS_Record";
+$dbh = $dbc->prepare($query);
 print $DBI::errstr unless $dbh;
 $dbh->execute();
 my @row = @{$dbh->fetchall_arrayref({})};
 
-my $domain = $config->add(name => "reimbold.netz", serial => "14");
-my $subnet = $domain->addSubnet(name => "192.168.10", address => "192.168.10.0", mask => "255.255.255.0");
-
 # build hash with record ids
 my %name;
-foreach (@row) {
-    $name{$_->{id}} = $_->{name};
+foreach my $record (@row) {
+    $name{$record->{id}} = $record->{name};
 }
 print "\n";
 
@@ -34,23 +51,23 @@ foreach (@row) {
     if ($_->{type} eq 'A') {
         if (exists $name{$_->{target_id}}) {
             my $ip = $name{$_->{target_id}};
-            $domain->add(name => $_->{name}, ip => $ip, type => "A");
+            $domain{$_->{domain_id}}->add(name => $_->{name}, ip => $ip, type => "A");
         }
     } elsif ($_->{type} eq 'PTR') {
         if (exists $name{$_->{target_id}}) {
             my $ip = $_->{name};
             my $name = $name{$_->{target_id}};
-            $domain->add(name => $name, ip => $ip, type => "PTR");
+            $domain{$_->{domain_id}}->add(name => $name, ip => $ip, type => "PTR");
         }
     } elsif ($_->{type} eq 'CNAME') {
         if (exists $name{$_->{target_id}}) {
             my $alias = $name{$_->{target_id}};
-            $domain->add(name => $_->{name}, alias => $alias, type => "CNAME");
+            $domain{$_->{domain_id}}->add(name => $_->{name}, alias => $alias, type => "CNAME");
         }
     } elsif ($_->{type} eq 'NS') {
         if (exists $name{$_->{target_id}}) {
             my $ip = $name{$_->{target_id}};
-            $domain->add(name => $_->{name}, ip => $ip, type => "NS");
+            $domain{$_->{domain_id}}->add(name => $_->{name}, ip => $ip, type => "NS");
         }
     }
 }
