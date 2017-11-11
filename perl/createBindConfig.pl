@@ -20,7 +20,7 @@ $dbh->execute();
 my @row = @{$dbh->fetchall_arrayref({})};
 
 my $domain = $config->add(name => "reimbold.netz", serial => "14");
-my $subnet = $domain->addSubnet(name => 192.168.10", address => "192.168.10.0", mask => "255.255.255.0");
+my $subnet = $domain->addSubnet(name => "192.168.10", address => "192.168.10.0", mask => "255.255.255.0");
 
 # build hash with record ids
 my %name;
