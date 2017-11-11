@@ -254,7 +254,7 @@ sub sprintHeader {
     $text .= sprintf("; name servers - NS records\n");
 	foreach (@{$self->getRecordsNS()}) {
 		my $fullname = $_->{Name}.".".$self->{Domain}.".";
-	    $text .= sprintf("@                 IN      NS      %s\n", $fullname);
+	    $text .= sprintf("@                 IN     NS      %s\n", $fullname);
     }
     $text .= sprintf("\n");
 
