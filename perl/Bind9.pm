@@ -139,7 +139,7 @@ sub new {
 
 	my $self = {
 	    Name     => $param{name},
-	    Filename => "db.".$param{name},
+	    Filename => "zones/db.".$param{name},
         Domain   => $param{domain},
 		Serial   => "0",
 		Refresh  => "604800",
