@@ -25,7 +25,7 @@ sub connect {
     my $self = shift;
 
     my @DSN = ("DBI:mysql:database=$self->{Database};host=$self->{Host}", 
-        $self->{Username}, $self->{Password});
+    $self->{Username}, $self->{Password});
 
     my $conn = DBI->connect(@DSN, { PrintError => 0, AutoCommit => 1,});
     # error with conection ?
