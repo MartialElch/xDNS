@@ -379,6 +379,20 @@
             $this->fixed = $entry[5];
         }
 
+        function insert() {
+            $names = "(mac, description)";
+            $values = sprintf("('%s', '%s')", $this->mac, $this->description);
+            $query = "INSERT INTO System ".$names." VALUES ".$values;
+
+            $res = $this->db->execute($query);
+            if ($res == TRUE) {
+                printf("mysql: new syste created successfully<br>\n");
+            } else {
+                printf("mysql: insert error<br>\n");
+                printf("mysql: %s<br>\n", $res->error);
+            }
+        }
+
         function update($id) {
             $values = sprintf("MAC='%s', description='%s', unknown='%s', record_id='%s', fixed='%s'", $this->mac, $this->description, $this->unknown, $this->record_id, $this->fixed);
             $query = "UPDATE System SET ".$values." WHERE id='$id'";
@@ -391,5 +405,8 @@
             }
         }
 
+        function validate() {
+            return 0;
+        }
     }
 ?>
