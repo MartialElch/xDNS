@@ -303,7 +303,6 @@ sub print {
 	    $text .= $_->sprint();
 	}
 
-    print $text;
     $self->SUPER::print($text);
 
     return;
@@ -325,7 +324,6 @@ sub print {
 	    $text .= $_->sprint();
 	}
 
-    print $text;
     $self->SUPER::print($text);
 
     return;
