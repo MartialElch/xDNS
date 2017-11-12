@@ -4,10 +4,11 @@
 
     printf("<h1>xDNS - Add</h1>\n");
 
+    $db = new Database($DB_HOST, $DB_USERNAME, $DB_PASSWORD, $DB_DATABASE);
+
     if (isset($_POST['formAddRecordA'])) {
         printf("Add A Record<br>\n");
 
-        $db = new Database($DB_HOST, $DB_USERNAME, $DB_PASSWORD, $DB_DATABASE);
         $db->connect();
         $record = new RecordA($db);
 
@@ -20,10 +21,24 @@
         $db->close();
     }
 
+    if (isset($_POST['formAddRecordCNAME'])) {
+        printf("Add A Record<br>\n");
+
+        $db->connect();
+        $record = new RecordCNAME($db);
+
+        $record->name = $_POST['alias'];
+        $record->target_id = $_POST['hostname'][0];
+        if ($record->validate() == 0) {
+            $record->insert();
+        }
+
+        $db->close();
+    }
+
     if (isset($_POST['formAddSystem'])) {
         printf("Add System<br>\n");
 
-        $db = new Database($DB_HOST, $DB_USERNAME, $DB_PASSWORD, $DB_DATABASE);
         $db->connect();
         $system = new System($db);
 
@@ -45,6 +60,29 @@
     printf("<tr><td>IP Address:</td> <td><input type='text' name='ip'></td></tr>\n");
     printf("</table>\n");
     printf("<p><input name='formAddRecordA' type='submit' value='add'/></p>\n");
+    printf("</form>\n");
+    printf("</p>\n");
+
+    printf("<h2>Add CNAME Record</h2>\n");
+
+    $db->connect();
+    $hostlist = $db->getHostnames();
+    $db->close();
+
+    printf("<p>\n");
+    printf("<form method='post' action='add.php'>\n");
+    printf("<table>\n");
+    printf("<tr><td>Alias:</td> <td><input type='text' name='alias'></td></tr>\n");
+    printf("<tr><td>Hostname:</td> <td>");
+        printf("<select name='hostname[]'>\n");
+        printf("<option value='0'>none</option>\n");
+        foreach ($hostlist as $host) {
+            printf("<option value='%s'>%s</option>\n", $host->id, $host->name);
+        }
+        printf("</select>\n");
+    printf("</td></tr>\n");
+    printf("</table>\n");
+    printf("<p><input name='formAddRecordCNAME' type='submit' value='add'/></p>\n");
     printf("</form>\n");
     printf("</p>\n");
 

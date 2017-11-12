@@ -89,6 +89,23 @@
             return $list;
         }
 
+        function getHostnames() {
+            $names = "id, name";
+            $query = "SELECT ".$names." FROM DNS_Record WHERE type='A' ORDER BY name";
+            $result = $this->getList($query);
+
+            $list = array();
+            foreach ($result as $entry) {
+                $record = new RecordCNAME($this);
+                $record->id = $entry[0];
+                $record->name = $entry[1];
+
+                $list[] = $record;
+            }
+
+            return $list;
+        }
+
         function getRecordsA() {
             $names = "id, name, type, target_id";
             $query = "SELECT ".$names." FROM DNS_Record WHERE type='A' ORDER BY name";
@@ -286,6 +303,26 @@
                 printf("mysql: record updated successfully<br>\n");
             } else {
                 printf("mysql: update error<br>\n");
+                printf("mysql: %s<br>\n", $res->error);
+            }
+        }
+    }
+
+    class RecordCNAME extends Record {
+        public $target_id;
+
+        function insert() {
+            $this->type = "CNAME";
+
+            $names = "(name, type, target_id)";
+            $values = sprintf("('%s', '%s', '%s')", $this->name, $this->type, $this->target_id);
+            $query = "INSERT INTO DNS_Record ".$names." VALUES ".$values;
+
+            $res = $this->db->execute($query);
+            if ($res == TRUE) {
+                printf("mysql: new record created successfully<br>\n");
+            } else {
+                printf("mysql: insert error<br>\n");
                 printf("mysql: %s<br>\n", $res->error);
             }
         }
