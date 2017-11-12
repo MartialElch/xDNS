@@ -20,16 +20,15 @@ $dbh->execute();
 my @domainlist = @{$dbh->fetchall_arrayref({})};
 
 my %domain;
-foreach (@domainlist) {
-    $domain{$_->{id}} = $config->add(name => $_->{name}, serial => $_->{serial});
-
-    my $query = sprintf("SELECT * FROM Subnet WHERE domain_id=%s", $_->{id});
+foreach my $d (@domainlist) {
+    $domain{$d->{id}} = $config->add(name => $d->{name}, serial => $d->{serial});
+    my $query = sprintf("SELECT * FROM Subnet WHERE domain_id=%s", $d->{id});
     my $dbh = $dbc->prepare($query);
     print $DBI::errstr unless $dbh;
     $dbh->execute();
     my @subnetlist = @{$dbh->fetchall_arrayref({})};
     foreach my $subnet (@subnetlist) {
-        $domain{$_->{id}}->addSubnet(name => $subnet->{name}, address => $subnet->{address}, mask => $subnet->{mask});
+        $domain{$d->{id}}->addSubnet(name => $subnet->{name}, address => $subnet->{address}, mask => $subnet->{mask});
     }
 }
 
@@ -47,27 +46,27 @@ foreach my $record (@row) {
 print "\n";
 
 # add records to domain
-foreach (@row) {
-    if ($_->{type} eq 'A') {
-        if (exists $name{$_->{target_id}}) {
-            my $ip = $name{$_->{target_id}};
-            $domain{$_->{domain_id}}->add(name => $_->{name}, ip => $ip, type => "A");
+foreach my $record (@row) {
+    if ($record->{type} eq 'A') {
+        if (exists $name{$record->{target_id}}) {
+            my $ip = $name{$record->{target_id}};
+            $domain{$record->{domain_id}}->add(name => $record->{name}, ip => $ip, type => "A");
         }
-    } elsif ($_->{type} eq 'PTR') {
-        if (exists $name{$_->{target_id}}) {
-            my $ip = $_->{name};
-            my $name = $name{$_->{target_id}};
-            $domain{$_->{domain_id}}->add(name => $name, ip => $ip, type => "PTR");
+    } elsif ($record->{type} eq 'PTR') {
+        if (exists $name{$record->{target_id}}) {
+            my $ip = $record->{name};
+            my $name = $name{$record->{target_id}};
+            $domain{$record->{domain_id}}->add(name => $name, ip => $ip, type => "PTR");
         }
-    } elsif ($_->{type} eq 'CNAME') {
-        if (exists $name{$_->{target_id}}) {
-            my $alias = $name{$_->{target_id}};
-            $domain{$_->{domain_id}}->add(name => $_->{name}, alias => $alias, type => "CNAME");
+    } elsif ($record->{type} eq 'CNAME') {
+        if (exists $name{$record->{target_id}}) {
+            my $alias = sprintf("%s.%s", $name{$record->{target_id}}, $domain{$record->{domain_id}}->{Name});
+            $domain{$record->{domain_id}}->add(name => $record->{name}, alias => $alias, type => "CNAME");
         }
-    } elsif ($_->{type} eq 'NS') {
-        if (exists $name{$_->{target_id}}) {
-            my $ip = $name{$_->{target_id}};
-            $domain{$_->{domain_id}}->add(name => $_->{name}, ip => $ip, type => "NS");
+    } elsif ($record->{type} eq 'NS') {
+        if (exists $name{$record->{target_id}}) {
+            my $ip = $name{$record->{target_id}};
+            $domain{$record->{domain_id}}->add(name => $record->{name}, ip => $ip, type => "NS");
         }
     }
 }
