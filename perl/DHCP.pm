@@ -161,10 +161,10 @@ sub print {
 
     printf("ddns-update-style %s;\n", $self->{DDNSUpdateStyle});
     printf("\n");
-    printf("option domain-name %s;\n", $self->{DomainName});
+    printf("option domain-name \"%s\";\n", $self->{DomainName});
     printf("option domain-name-servers %s;\n", $self->{NameServer});
-    printf("option default-lease-time %d;\n", $self->{DefaultLeaseTime});
-    printf("option max-lease-time %d;\n", $self->{MaxLeaseTime});
+    printf("default-lease-time %d;\n", $self->{DefaultLeaseTime});
+    printf("max-lease-time %d;\n", $self->{MaxLeaseTime});
     printf("\n");
     # print some defaults
     printf("log-facility local7;\n");
