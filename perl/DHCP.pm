@@ -17,15 +17,17 @@ sub new {
 	return $self;
 }
 
-sub print {
+sub sprint {
     my $self = shift;
 
-    printf("host %s {\n", $self->{Name});
-    printf("    hardware ethernet %s;\n", lc($self->{MAC}));
-    printf("    fixed-address %s;\n", $self->{Address});
-    printf("}\n");
+    my $text;
 
-    return;
+    $text .= sprintf("host %s {\n", $self->{Name});
+    $text .= sprintf("    hardware ethernet %s;\n", lc($self->{MAC}));
+    $text .= sprintf("    fixed-address %s;\n", $self->{Address});
+    $text .= sprintf("}\n");
+
+    return $text;
 }
 
 # setter and getter
@@ -83,30 +85,32 @@ sub add {
     return;
 }
 
-sub print {
+sub sprint {
     my $self = shift;
 
-    printf("subnet %s netmask %s {\n", $self->{Address}, $self->{Netmask});
+    my $text;
+
+    $text .= sprintf("subnet %s netmask %s {\n", $self->{Address}, $self->{Netmask});
     if (defined $self->{Range}) {
-        printf("    range %s;\n", $self->{Range});
+        $text .= sprintf("    range %s;\n", $self->{Range});
     }
-    printf("    option broadcast-address %s;\n", $self->{Broadcast});
-    printf("    option routers %s;\n", $self->{Router});
+    $text .= sprintf("    option broadcast-address %s;\n", $self->{Broadcast});
+    $text .= sprintf("    option routers %s;\n", $self->{Router});
     if (defined $self->{DomainName}) {
-        printf("   option domain-name %s;\n", $self->{DomainName});
+        $text .= sprintf("   option domain-name %s;\n", $self->{DomainName});
     }
-    printf("}\n");
-    printf("\n");
+    $text .= sprintf("}\n");
+    $text .= sprintf("\n");
 
     # print Host records
     foreach (@{$self->{Record}}) {
         if ($_->Type() eq "Host") {
-            $_->print();
+            $text .= $_->sprint();
         }
-        printf("\n");
+        $text .= sprintf("\n");
     }
 
-    return;
+    return $text;
 }
 
 #-------------------------------------------------------------------------------
@@ -118,6 +122,7 @@ sub new {
 	my %param = @_;
 
 	my $self = {
+	    Filename => "dhcpd.conf",
 	    DomainName => $param{"domainname"},
 	    NameServer => $param{"nameserver"},
 	    DefaultLeaseTime => 600,
@@ -159,20 +164,29 @@ sub add {
 sub print {
     my $self = shift;
 
-    printf("ddns-update-style %s;\n", $self->{DDNSUpdateStyle});
-    printf("\n");
-    printf("option domain-name \"%s\";\n", $self->{DomainName});
-    printf("option domain-name-servers %s;\n", $self->{NameServer});
-    printf("default-lease-time %d;\n", $self->{DefaultLeaseTime});
-    printf("max-lease-time %d;\n", $self->{MaxLeaseTime});
-    printf("\n");
+    use IO::File;
+
+    my $text;
+
+    $text .= sprintf("ddns-update-style %s;\n", $self->{DDNSUpdateStyle});
+    $text .= sprintf("\n");
+    $text .= sprintf("option domain-name \"%s\";\n", $self->{DomainName});
+    $text .= sprintf("option domain-name-servers %s;\n", $self->{NameServer});
+    $text .= sprintf("default-lease-time %d;\n", $self->{DefaultLeaseTime});
+    $text .= sprintf("max-lease-time %d;\n", $self->{MaxLeaseTime});
+    $text .= sprintf("\n");
+
     # print some defaults
-    printf("log-facility local7;\n");
-    printf("\n");
+    $text .= sprintf("log-facility local7;\n");
+    $text .= sprintf("\n");
 
     foreach (@{$self->{Subnet}}) {
-        $_->print();
+        $text .= $_->sprint();
     }
+        
+    my $file = new IO::File($self->{Filename}, 'w');
+    print $file $text;
+    $file->close;
 
     return;
 }
