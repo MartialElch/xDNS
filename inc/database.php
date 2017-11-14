@@ -32,7 +32,7 @@
 
         function connect() {
             $this->conn = new mysqli($this->DB_HOST, $this->DB_USERNAME, $this->DB_PASSWORD, $this->DB_DATABASE);
-            if ($this->conn->connec_error) {
+            if ($this->conn->connect_error) {
                 error("connection error: ".$this->conn->connect_error);
             }
         }
