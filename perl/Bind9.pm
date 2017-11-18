@@ -373,7 +373,7 @@ sub new {
 	    Record  => \@{[]},
 		Serial  => $param{"serial"},
 	    Subnet  => \@{[]},
-	    Zone   => \@{[]},
+	    Zone    => \@{[]},
 	};
 	bless $self, $class;
 
