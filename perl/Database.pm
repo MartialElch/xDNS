@@ -46,6 +46,17 @@ sub disconnect {
     return;
 }
 
+sub execute {
+    my $self = shift;
+    my $query = shift;
+
+    my $conn = $self->{Connection};
+    my $h = $conn->prepare($query);
+    my $ret = $h->execute();
+
+    return $ret;
+}
+
 sub getEntry {
     my $self = shift;
     my $query = shift;
@@ -81,6 +92,69 @@ sub insert {
     my $conn = $self->{Connection};
     my $h = $conn->prepare($query);
     my $ret = $h->execute();
+
+    return;
+}
+
+#-------------------------------------------------------------------------------
+package Database::Domain;
+
+use strict;
+
+sub new {
+	my $class = shift;
+	my %param = @_;
+
+	my $self = {
+		Name   => "",
+	    ID     => 0,
+		Serial => 0,
+	    DB     => $param{"db"},
+	};
+	bless $self, $class;
+
+	return $self;
+}
+
+sub get {
+    my $self = shift;
+    my $id = shift;
+
+    my $query = sprintf("SELECT * FROM Domain WHERE id='%s'", $id);
+    my $entry = $self->{DB}->getEntry($query);
+
+    $self->{Name} = $entry->{name};
+    $self->{ID} = $entry->{id};
+    $self->{Serial} = $entry->{serial};
+
+    return;
+}
+
+sub increment {
+    my $self = shift;
+
+    $self->{Serial}++;
+    $self->update();
+
+    return;
+}
+
+sub show {
+    my $self = shift;
+
+    printf("Name   = %s\n", $self->{Name});
+    printf("ID     = %s\n", $self->{ID});
+    printf("Serial = %s\n", $self->{Serial});
+
+    return;
+}
+
+sub update {
+    my $self = shift;
+
+    my $values = sprintf("name='%s', serial='%s'", $self->{Name}, $self->{Serial});
+    my $query = sprintf("UPDATE Domain SET %s WHERE id='%d'", $values, $self->{ID});
+    $self->{DB}->execute($query);
 
     return;
 }

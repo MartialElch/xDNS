@@ -3,47 +3,46 @@ use strict;
 
 use lib ".";
 
-use DBI;
+use Database;
 use DBConfig;
 use Bind9;
 
 my $config = new Bind9::Config();
 
-my @DSN = ("DBI:mysql:database=$DBConfig::DB_DATABASE;host=$DBConfig::DB_HOSTNAME", $DBConfig::DB_USERNAME, $DBConfig::DB_PASSWORD);
-my $dbc = DBI->connect(@DSN, { PrintError => 0, AutoCommit => 1, });
-die $DBI::errstr unless $dbc;
+my $db = new Database(
+    host => $DBConfig::DB_HOSTNAME,
+    database => $DBConfig::DB_DATABASE,
+    user =>$DBConfig::DB_USERNAME,
+    password => $DBConfig::DB_PASSWORD);
+$db->connect();
 
 my $query = "SELECT * FROM Domain";
-my $dbh = $dbc->prepare($query);
-print $DBI::errstr unless $dbh;
-$dbh->execute();
-my @domainlist = @{$dbh->fetchall_arrayref({})};
+my @domainlist = @{$db->getList($query)};
 
 my %domain;
-foreach my $d (@domainlist) {
-    $domain{$d->{id}} = $config->add(name => $d->{name}, serial => $d->{serial});
-    my $query = sprintf("SELECT * FROM Subnet WHERE domain_id=%s", $d->{id});
-    my $dbh = $dbc->prepare($query);
-    print $DBI::errstr unless $dbh;
-    $dbh->execute();
-    my @subnetlist = @{$dbh->fetchall_arrayref({})};
+foreach (@domainlist) {
+    my $d = new Database::Domain(db => $db);
+    $d->get($_->{id});
+    $domain{$d->{ID}} = $config->add(name => $d->{Name}, serial => $d->{Serial});
+
+    my $query = sprintf("SELECT * FROM Subnet WHERE domain_id=%s", $d->{ID});
+    my @subnetlist = @{$db->getList($query)};
     foreach my $subnet (@subnetlist) {
-        $domain{$d->{id}}->addSubnet(name => $subnet->{name}, address => $subnet->{address}, mask => $subnet->{mask});
+        $domain{$d->{ID}}->addSubnet(name => $subnet->{name}, address => $subnet->{address}, mask => $subnet->{mask});
     }
+
+    # increment serial number
+    $d->increment();
 }
 
 $query = "SELECT * FROM DNS_Record";
-$dbh = $dbc->prepare($query);
-print $DBI::errstr unless $dbh;
-$dbh->execute();
-my @row = @{$dbh->fetchall_arrayref({})};
+my @row = @{$db->getList($query)};
 
 # build hash with record ids
 my %name;
 foreach my $record (@row) {
     $name{$record->{id}} = $record->{name};
 }
-print "\n";
 
 # add records to domain
 foreach my $record (@row) {
@@ -71,7 +70,7 @@ foreach my $record (@row) {
     }
 }
 
-$dbc->disconnect();
+$db->disconnect();
 
 $config->print;
 
