@@ -364,6 +364,8 @@ sub Zone {
 package Bind9::Domain;
 use strict;
 
+use Constants qw(NO_NS_RECORD_FOUND WRONG_IPV4_FORMAT);
+
 sub new {
 	my $class = shift;
 	my %param = @_;
@@ -390,10 +392,12 @@ sub add {
     my $record;
 
     if ($param{"type"} eq "A") {
+    	$self->validateIP($param{"ip"});
     	$record = new Bind9::RecordA(name => $param{"name"},
                                      ip   => $param{"ip"});
         @{$self->{Zone}}[0]->add($record);
     } elsif ($param{"type"} eq "PTR") {
+    	$self->validateIP($param{"ip"});
         my $subnet = $self->getSubnet($param{"ip"});
         my $zone = $subnet->Zone();
         $record = new Bind9::RecordPTR(ip      => $param{"ip"},
@@ -405,6 +409,7 @@ sub add {
                                          alias => $param{"alias"});
         @{$self->{Zone}}[0]->add($record);
     } elsif ($param{"type"} eq "NS") {
+    	$self->validateIP($param{"ip"});
         my $subnet = $self->getSubnet($param{"ip"});
         my $zone = $subnet->Zone();
         $record = new Bind9::RecordNS(name   => $param{"name"},
@@ -466,9 +471,44 @@ sub print {
     return;
 }
 
+sub validateIP {
+	my $self = shift;
+	my $ip = shift;
+
+	my $octet = qr/\d{1,2}|[01]\d{2}|2[0-4]\d|25[0-5]/;
+	if ($ip =~ /^$octet.$octet.$octet.$octet$/) {
+	} else {
+		print "IPv4 error - ", $ip, "\n";
+		Bind9::Config::error($self, WRONG_IPV4_FORMAT);
+	}
+
+	return;
+}
+
+sub validateNS {
+	my $self = shift;
+	my $error = 0;
+
+	foreach (@{$self->{Zone}}) {
+		my @ns = @{$_->getRecordsNS()};
+		if (scalar(@ns) == 0) {
+			print "Zone error - ", $_->{Name}, "\n";
+			$error = NO_NS_RECORD_FOUND;
+		}
+	}
+
+	if ($error) {
+		return $error;	
+	}
+
+	return $error;	
+}
+
 #-------------------------------------------------------------------------------
 package Bind9::Config;
 use strict;
+
+use Constants qw(NO_NS_RECORD_FOUND WRONG_IPV4_FORMAT);
 
 sub new {
 	my $class = shift;
@@ -493,14 +533,45 @@ sub add {
     return $domain;
 }
 
+sub error {
+	my $self = shift;
+	my $error = shift;
+
+	if ($error == NO_NS_RECORD_FOUND) {
+		die "error: no NS record found\n";
+	} elsif ($error == WRONG_IPV4_FORMAT) {
+		die "error: wrong formatted IPv4 address\n";
+	} else {
+		die "unknown error: $error\n";
+	}
+
+	return;
+}
+
 sub print {
         my $self = shift;
+
+		if (my $rc = $self->validate()) {
+			$self->error($rc);
+		}
 
         foreach (@{$self->{Domain}}) {
                 $_->print();
         }
 
         return;
+}
+
+sub validate {
+	my $self = shift;
+
+    foreach (@{$self->{Domain}}) {
+    	if (my $rc = $_->validateNS()) {
+    		return $rc;
+    	}
+    }
+
+	return 0;
 }
 
 #-------------------------------------------------------------------------------
