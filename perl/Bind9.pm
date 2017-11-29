@@ -549,17 +549,17 @@ sub error {
 }
 
 sub print {
-        my $self = shift;
+    my $self = shift;
 
-		if (my $rc = $self->validate()) {
-			$self->error($rc);
-		}
+	if (my $rc = $self->validate()) {
+		$self->error($rc);
+	}
 
-        foreach (@{$self->{Domain}}) {
-                $_->print();
-        }
+    foreach (@{$self->{Domain}}) {
+        $_->print();
+     }
 
-        return;
+     return;
 }
 
 sub validate {
