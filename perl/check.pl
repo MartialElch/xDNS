@@ -16,12 +16,22 @@ $db->connect();
 my $query = sprintf("SELECT * FROM System");
 my @list = @{$db->getList($query)};
 
+my dhcp=0; my $fixed=0;
+
 foreach (@list) {
 	print $_->{MAC}, "\n";
 	print $_->{description}, "\n";
 	print $_->{fixed}, "\n";
+
+	if ($_->{fixed}) {
+		$fixed++;
+	} else {
+		$dhcp++;
+	}
 }
 
+printf("DHCP  = %d\n", $dhcp);
+printf("Fixed = %d\n", $fixed);
 
 exit 0
 
