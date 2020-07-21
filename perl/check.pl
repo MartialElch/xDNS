@@ -18,6 +18,8 @@ my @list = @{$db->getList($query)};
 
 foreach (@list) {
 	print $_->{MAC}, "\n";
+	print $_->{description}, "\n";
+	print $_->{fixed}, "\n";
 }
 
 
