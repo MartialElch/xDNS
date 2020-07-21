@@ -16,7 +16,7 @@ $db->connect();
 my $query = sprintf("SELECT * FROM System");
 my @list = @{$db->getList($query)};
 
-my dhcp=0; my $fixed=0;
+my $dhcp=0; my $fixed=0;
 
 foreach (@list) {
 	print $_->{MAC}, "\n";
