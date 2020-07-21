@@ -17,7 +17,7 @@ my $query = sprintf("SELECT * FROM System");
 my @list = @{$db->getList($query)};
 
 foreach (@list) {
-	print $_, "\n";
+	print $_->{MAC}, "\n";
 }
 
 
