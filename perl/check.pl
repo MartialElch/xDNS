@@ -14,7 +14,7 @@ my $db = new Database(host => $DBConfig::DB_HOSTNAME, database => $DBConfig::DB_
 $db->connect();
 
 my $query = sprintf("SELECT * FROM System");
-my @list = $db->getList($query);
+my @list = @{$db->getList($query)};
 
 foreach (@list) {
 	print $_, "\n";
